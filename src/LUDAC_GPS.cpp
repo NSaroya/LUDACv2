@@ -8,6 +8,12 @@
 
 #include "LUDAC_GPS.h"
 
+// Define verbose printing macro for debugging
+#define VERBOSE_PRINT_GPS(x) \
+    Serial.print(millis()); \
+    Serial.print(": "); \
+    Serial.println(x);
+
 // Global variable for GPS module
 SoftwareSerial GPSSerial(26,27);
 Adafruit_GPS GPS(&GPSSerial);
@@ -44,8 +50,10 @@ void initGPS() {
  */
 bool receivedGPSfix() {
   char c = GPS.read();
+  VERBOSE_PRINT_GPS("Received character from GPS Device: " + String(c));
 
   if (GPS.newNMEAreceived()) {
+    VERBOSE_PRINT_GPS("A new NMEA line has been received");
     if (!GPS.parse(GPS.lastNMEA())) {
       return false;
     }
@@ -53,15 +61,11 @@ bool receivedGPSfix() {
 
   // Check if GPS has a fix
   if (!GPS.fix) {
-    #ifdef DEBUG
-      // Print intermediate GPS info before fix
-      return true;
-    #else
-      // Don't print intermediate GPS info until there is a fix
-      return false;
-    #endif
+    VERBOSE_PRINT_GPS("GPS does not have a fix yet");
+    return false;
   }
 
+  VERBOSE_PRINT_GPS("GPS has a fix");
   return true;
 }
 

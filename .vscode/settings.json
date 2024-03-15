@@ -285,5 +285,6 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "iostream": "cpp"
-  }
+  },
+  "idf.portWin": "COM11"
 }

@@ -8,13 +8,25 @@
 
 #include "LUDAC_WiFi.h"
 
+// Define global variables
+uint8_t connectedAddress[6] = {0}; // Initialize to all zeros
+
+uint8_t broadcastAddresses[][6] = {
+  {0x40, 0x44, 0xD8, 0x08, 0xF9, 0x94}, // MAC address of transceiver A (HackED sticker)
+  {0x40, 0x22, 0xD8, 0x06, 0x75, 0x2C}, // MAC address of transceiver B (no sticker)
+  {0xB8, 0xD6, 0x1A, 0x67, 0xF8, 0x54}, // MAC address of transceiver C (covered microstrip antenna)
+  {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}  // MAC address of transceiver D (weird WOER antenna, doesn't receive)
+};
+
+String s_thisAddress = WiFi.macAddress(); 
+
 /**
  * @brief Initializes WiFi in station mode.
  * 
  * This function initializes WiFi in station mode and waits until 
  * connected to a WiFi network.
  */
-void initLudacWIFI() {
+bool initLudacWIFI() {
   
   // Set device as a Wi-Fi station
   WiFi.mode(WIFI_STA);
@@ -35,6 +47,8 @@ void initLudacWIFI() {
   Serial.println("WIFI Setup done");
 
   delay(500);
+
+  return true;
 }
 
 /**
@@ -48,19 +62,22 @@ void initLudacWIFI() {
  * @return true if any peer is added successfully, otherwise false.
  */
 bool WiFi_connectToPeer(uint8_t (*addresses)[6], size_t numAddresses) {
+  uint8_t* broadcastAddress;
+
   // Iterate over each broadcast address
   for (size_t i = 0; i < sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]); ++i) {
     // Copy the current broadcast address
-    uint8_t* address = broadcastAddresses[i];
+    broadcastAddress = broadcastAddresses[i];
 
     // Copy the broadcast address to peerInfo
-    memcpy(peerInfo.peer_addr, address, 6);
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
     peerInfo.channel = 0;  
     peerInfo.encrypt = false;
 
     // Attempt to add the peer
     if (esp_now_add_peer(&peerInfo) == ESP_OK) {
       Serial.println("Peer added successfully");
+      memcpy(connectedAddress, broadcastAddress, 6);
       return true; // Return true if peer added successfully
     }
   }
@@ -117,7 +134,8 @@ void WiFi_RegisterPeer() {
   esp_now_register_send_cb(OnDataSent);
 
   // Register peer
-  WiFi_connectToPeer(broadcastAddresses, sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]));
+  WiFi_connectToPeer(broadcastAddresses, 
+                    sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]));
 
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
@@ -153,6 +171,8 @@ void getReadingsFromArray() {
  */
 void espnow_WiFi_duplex() {
   
+  // WiFi.RSSI();
+
   // Get readings from peripherals
   getReadingsFromArray();
 
@@ -162,7 +182,7 @@ void espnow_WiFi_duplex() {
   outgoing.packet_no = out_packet_no;
 
   // Send outgoing payload via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outgoing, sizeof(outgoing));
+  esp_err_t result = esp_now_send(connectedAddress, (uint8_t *) &outgoing, sizeof(outgoing));
    
   // Check for errors
   if (result == ESP_OK) {
