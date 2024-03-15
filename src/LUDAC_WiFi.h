@@ -7,19 +7,10 @@
 #define LENGTH 50 // char buffer array length
 
 // Get the MAC address of this transceiver
-String s_thisAddress = WiFi.macAddress(); 
+extern uint8_t connectedAddress[6]; // Global variable to store the connected address
 
 // MAC Addresses
-uint8_t broadcastAddresses[][6] = {
-  {0x40, 0x44, 0xD8, 0x08, 0xF9, 0x94}, // MAC address of transceiver A (HackED sticker)
-  {0x40, 0x22, 0xD8, 0x06, 0x75, 0x2C}, // MAC address of transceiver B (no sticker)
-  {0xB8, 0xD6, 0x1A, 0x67, 0xF8, 0x54}, // MAC address of transceiver C (covered microstrip antenna)
-  {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}  // MAC address of transceiver D (weird WOER antenna, doesn't receive)
-};
-
-// MAC ADDRESSES
-extern String s_thisAddress;
-extern uint8_t broadcastAddress[];
+extern uint8_t broadcastAddresses[][6];
 
 // Outgoing variables
 extern char out_message[LENGTH];
@@ -47,7 +38,7 @@ extern payload incoming;
 extern esp_now_peer_info_t peerInfo;
 
 // Function prototypes
-void initLudacWIFI();
+bool initLudacWIFI();
 bool WiFi_connectToPeer(uint8_t* address);
 void WiFi_RegisterPeer();
 void getReadingsFromAddress();

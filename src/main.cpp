@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "LUDAC_LoRa.h"
+#include "LUDAC_WiFi.h"
 #include "LUDAC_GPS.h"
 
 // Define verbose printing macro for debugging
@@ -50,7 +51,14 @@ void setup() {
         VERBOSE_PRINT("Starting LoRa succeeded!");
     }
 
+    if (!initLudacWIFI()) {
+        VERBOSE_PRINT("Starting WiFI failed!");
+    } else {
+        VERBOSE_PRINT("Starting WiFI succeeded!");
+    }
+
     // Initialize GPS module
+    VERBOSE_PRINT("Initializing GPS ...");
     initGPS();
 }
 
@@ -72,6 +80,7 @@ void loop() {
 
     // Process GPS data
     if (receivedGPSfix()) {
+    // if (true) {
         getGPStime(gpsTime);
         getGPSdate(gpsDate);
         getLatLong(&latLong);
