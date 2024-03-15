@@ -1,6 +1,5 @@
 
 #include "LUDAC_LoRa.h"
-// #include "../docs/LoRa.h"
 
 /**
  * @brief Initialize the LoRa module.
@@ -18,6 +17,12 @@ bool initLoRa() {
   float lat_away;
   float lon_away;
   float dis_away;
+
+  // Define constants for LoRa transceiving
+  // byte msgCount = 0;
+  // byte buffer_size = 50;
+  // long lastSendTime = 0;
+  // int interval = 2000;
 
   // Set up LoRa module
   LoRa.setPins(RADIO_CS_PIN, RADIO_DI0_PIN, RADIO_RST_PIN);
@@ -122,7 +127,7 @@ void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* i
   }
 
   // Parse the received message
-  recParsing(incoming);
+  receiveLoRaChar_Parse(incoming);
 
   // Print parsed data
   Serial.println(lat_away);
@@ -130,25 +135,45 @@ void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* i
   Serial.println(dis_away);
 }
 
-
-void recParsing(char received[]){
+/**
+ * @brief Parse received character data
+ * 
+ * This function parses data received over LoRa communication.
+ * 
+ * @param received The received character array.
+ */
+void receiveLoRaChar_Parse(char received[]){
   
-  // Parse the received char array by store the corresponding parts to their contaiers
+  // Parse the received char array by storing the corresponding parts in their containers
   for(int i = 0; i<15; i++){
     lat_rec[i] = received[i];
-    lat_away = atof(lat_rec);
+    lat_away = atof(lat_rec);  // Convert latitude string to double
   }
 
   for(int j = 0; j<15; j++){
     lon_rec[j] = received[j+15];
-    lon_away = atof(lon_rec);
+    lon_away = atof(lon_rec);  // Convert longitude string to double
   }
 
   for(int k = 0; k<15; k++){
     dis_rec[k] = received[k+30];
-    dis_away = atof(dis_rec);
+    dis_away = atof(dis_rec);  // Convert distance string to double
   }
 }
+
+
+// float relaDistance(float lat1, float lon1, float lat2, float lon2) {
+  
+//   // Pre-calculate some parameters to speed up the algorithm
+//   float delta_lat = (lat2-lat1)*PI/180;
+//   float delta_lon = (lon2-lon1)*PI/180;
+//   float sin_delta_lat = sin(delta_lat/2);
+//   float sin_delta_lon = sin(delta_lon/2);
+
+//   // Implement the GPS distance formula
+//   float d = 2*6378000*asin(sqrt(sin_delta_lat*sin_delta_lat+cos(lat1*PI/180)*cos(lat2*PI/180)*sin_delta_lon*sin_delta_lon));
+//   return d;
+// }
 
 /**
  * @brief Send data via LoRa.

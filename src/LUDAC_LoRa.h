@@ -15,7 +15,7 @@
 bool initLoRa();
 void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte destinationAddress);
 void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* incoming);
-void recParsing(char received[]);
+void receiveLoRaChar_Parse(char received[]);
 void sendLoRaString(String outgoing, byte localAddress, byte destinationAddress);
 bool receiveLoRaString(int packetSize, byte localAddress, String &incoming);
 
