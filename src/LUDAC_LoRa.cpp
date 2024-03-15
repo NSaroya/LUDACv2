@@ -1,3 +1,10 @@
+/**
+ * @file LUDAC_LoRa.cpp
+ * @brief LoRa Communication Module.
+ * 
+ * This module provides functionality to establish communication
+ * between ESP32 devices using LoRa protocol.
+ */
 
 #include "LUDAC_LoRa.h"
 
