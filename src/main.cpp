@@ -126,3 +126,53 @@ void printGPSInfo() {
     VERBOSE_PRINT("    since last GPS time: " + String(getGPSlastTime(), 3));
     VERBOSE_PRINT("    since last GPS date: " + String(getGPSlastDate(), 3));
 }
+
+// DO NOT USE !!!
+// WORK IN PROGRESS (if GPS coordinates send by LoRa char (not string) packets)
+
+// void ludac_lora_loop() {
+  
+//   if(GPS_serial.available()){
+    
+
+//     // Convert GPS lat, lon, and distance to the corresponding char arrays
+//     char lat[15] = {0};
+//     sprintf(lat, "%f", fake_gps_lat); //change this to GPS.latitude in practise
+    
+//     char lon[15] = {0};
+//     sprintf(lon, "%f", fake_gps_lon); //change this to GPS.longtitude in practise
+
+//     // call the relaDistance function to calculate the relative distance
+//     float dist = relaDistance(fake_gps_lat, fake_gps_lon, 53.534940, -113.541585);
+    
+//     char dis[15] = {0};
+//     sprintf(dis, "%f", dist);
+    
+//     // Insert the lat, lon, and distance into the buffer array
+//     for(int j = 0; j<15; j++){
+//       LoRa_sending_buffer[j] = lat[j];
+//     }
+    
+//     for(int k = 0; k<15; k++){
+//       LoRa_sending_buffer[k+15] = lon[k];
+//     }
+      
+//     for(int z = 0; z<15; z++){
+//       LoRa_sending_buffer[z+30] = dis[z];
+//     }
+    
+//   }
+
+//   // If the difference between current and the last send time is greater than the interval time, 
+//   // send the buffered data
+//   if (millis() - lastSendTime > interval)
+//   {
+//     sendMSG(LoRa_sending_buffer);
+    
+//     lastSendTime = millis();
+//     interval = random(2000) + 1000;
+//   }
+
+//   // When not sending LoRa packets, listen to the incoming messages
+//   onReceive(LoRa.parsePacket());
+// }
