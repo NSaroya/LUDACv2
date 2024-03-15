@@ -1,6 +1,12 @@
+/**
+ * @file LUDAC_GPS.cpp
+ * @brief GPS Parsing Module.
+ * 
+ * This module provides functionality to parse the GPS data
+ * into various formats
+ */
 
 #include "LUDAC_GPS.h"
-
 
 // Global variable for GPS module
 SoftwareSerial GPSSerial(26,27);
