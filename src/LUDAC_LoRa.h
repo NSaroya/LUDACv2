@@ -11,17 +11,23 @@
 #define LORA_FREQUENCY 915E6
 #define LORA_SPREADING_FACTOR 8
 
+//   Define constants for LoRa transceiving
+// byte msgCount = 0;
+// long lastSendTime = 0;
+// int interval = 2000;
+
 // Function prototypes
 bool initLoRa();
 void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte destinationAddress);
-void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* incoming);
+char* receiveLoRaChar(int packetSize, byte localAddress);
 void receiveLoRaChar_Parse(char received[]);
 void sendLoRaString(String outgoing, byte localAddress, byte destinationAddress);
 bool receiveLoRaString(int packetSize, byte localAddress, String &incoming);
+int getLoRaRSSI();
 
 // Global variables
-extern char LoRa_sending_buffer[50];
-extern char LoRa_received_buffer[50];
+// extern char LoRa_sending_buffer[250];
+extern char LoRa_received_buffer[250];
 extern char lat_rec[15];
 extern char lon_rec[15];
 extern char dis_rec[15];

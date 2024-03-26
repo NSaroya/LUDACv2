@@ -20,6 +20,20 @@ uint8_t broadcastAddresses[][6] = {
 
 String s_thisAddress = WiFi.macAddress(); 
 
+char out_message[LENGTH];
+float out_time;
+int out_packet_no;
+
+char inc_message[LENGTH];
+float inc_time;
+int inc_packet_no;
+
+String success;
+
+payload outgoing;
+payload incoming;
+esp_now_peer_info_t peerInfo;
+
 /**
  * @brief Initializes WiFi in station mode.
  * 
@@ -76,8 +90,15 @@ bool WiFi_connectToPeer(uint8_t (*addresses)[6], size_t numAddresses) {
 
     // Attempt to add the peer
     if (esp_now_add_peer(&peerInfo) == ESP_OK) {
-      Serial.println("Peer added successfully");
+      Serial.print("Adding peer MAC address: ");
+      for (int j = 0; j < 6; ++j) {
+          Serial.print(broadcastAddress[j], HEX);
+          if (j < 5) {
+              Serial.print(':');
+          }
+      }
       memcpy(connectedAddress, broadcastAddress, 6);
+      Serial.println("Peer added successfully");
       return true; // Return true if peer added successfully
     }
   }
@@ -116,7 +137,7 @@ bool WiFi_connectToPeer_manual(uint8_t* address){
  * This function registers the device as a peer, initializes ESP-NOW,
  * and sets up callbacks for data transmission and reception.
  */
-void WiFi_RegisterPeer() {
+bool WiFi_RegisterPeer() {
   // Initialize packet number to zero
   out_packet_no = 0; 
 
@@ -126,7 +147,7 @@ void WiFi_RegisterPeer() {
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
-    return;
+    return false;
   }
 
   // Once ESPNow is successfully Init, we will register for Send CB to
@@ -134,11 +155,13 @@ void WiFi_RegisterPeer() {
   esp_now_register_send_cb(OnDataSent);
 
   // Register peer
-  WiFi_connectToPeer(broadcastAddresses, 
-                    sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]));
+  bool WifiConnectStatus = WiFi_connectToPeer(broadcastAddresses, 
+                            sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]));
 
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
+
+  return WifiConnectStatus;
 }
 
 /**
@@ -242,3 +265,18 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   inc_time = incoming.time;
   inc_packet_no = incoming.packet_no;
 }
+
+/**
+ * @brief Get the received signal strength indicator (RSSI) from WiFi.
+ * 
+ * This function retrieves the RSSI value from the WiFi module. If the RSSI
+ * value is not equal to 0, it returns the RSSI value; otherwise, it 
+ * returns -1 to indicate an invalid RSSI value.
+ * 
+ * @return The RSSI value if it is valid, otherwise -1.
+ */
+int32_t getWiFiRSSI() {
+  int32_t RSSI = WiFi.RSSI();
+  return (RSSI != 0) ? RSSI : -1; // Return RSSI value if not equal to 0, else return -1
+}
+
