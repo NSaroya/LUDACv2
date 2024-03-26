@@ -121,8 +121,7 @@ void setup() {
     }
 }
 
-
-void loop1(){
+void loop(){
 
     String printGPSI = getGPSdata();
     VERBOSE_PRINT(printGPSI);
@@ -137,7 +136,7 @@ void loop1(){
     delay(500);
 }
 
-void loop() {
+void loop1() {
     
     // If receive_LoRa_Buffer is already declared, delete it to avoid memory leaks
     if (receive_LoRa_Buffer != nullptr) {
@@ -258,7 +257,7 @@ void loop() {
           // Handle error
           // Maybe print an error message or take appropriate action
           VERBOSE_PRINT("Error: Failed to generate LoRa transmit buffer");
-          return;
+          return; // for debug
         }
 
         // Ensure transmit_LoRa_Buffer is not larger than 250 bytes

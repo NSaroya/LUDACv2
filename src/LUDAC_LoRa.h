@@ -24,6 +24,7 @@ void receiveLoRaChar_Parse(char received[]);
 void sendLoRaString(String outgoing, byte localAddress, byte destinationAddress);
 bool receiveLoRaString(int packetSize, byte localAddress, String &incoming);
 int getLoRaRSSI();
+float getLoRaSNR();
 
 // Global variables
 // extern char LoRa_sending_buffer[250];
