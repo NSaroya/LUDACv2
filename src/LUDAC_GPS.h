@@ -20,11 +20,42 @@
 #define TEN_SECONDS 10000
 
 // Structure to hold latitude, longitude, and fix status
+// struct LatLong {
+//   float latitude;       // Latitude in decimal degrees
+//   float longitude;      // Longitude in decimal degrees
+//   bool hasValidFix;     // Flag indicating if GPS has a valid fix
+//   uint32_t timestamp;   // Timestamp of GPS fix in milliseconds
+// };
+
+// struct LatLong {
+//   float latitude;       // Latitude in decimal degrees
+//   float longitude;      // Longitude in decimal degrees
+//   float altitude;       // Altitude in meters
+//   int gpsQuality;       // GPS quality indicator
+//   bool hasValidFix;     // Flag indicating if GPS has a valid fix
+//   String utcTime;       // UTC time of position fix
+//   uint32_t timestamp;   // Timestamp of GPS fix in milliseconds
+// };
+
 struct LatLong {
   float latitude;       // Latitude in decimal degrees
   float longitude;      // Longitude in decimal degrees
+  float altitude;       // Altitude in meters
+  int gpsQuality;       // GPS quality indicator
   bool hasValidFix;     // Flag indicating if GPS has a valid fix
+  String utcTime;       // UTC time of position fix
   uint32_t timestamp;   // Timestamp of GPS fix in milliseconds
+
+  // Function to reset all fields to null or zeros
+  void reset() {
+    latitude = 0.0;
+    longitude = 0.0;
+    altitude = 0.0;
+    gpsQuality = 0;
+    hasValidFix = false;
+    utcTime = "";
+    timestamp = 0;
+  }
 };
 
 // Structure to hold Haversine distance and time difference
@@ -34,7 +65,8 @@ struct Haversine {
 };
 
 // GPS initialization and GPS fix related functions
-void initGPS();  // Initialize GPS module
+void initLudacGPS();  // Initialize GPS module
+String getGPSdata();
 bool receivedGPSfix();  // Check if a new GPS fix has been received
 bool hasNewGPSFix(struct LatLong *, struct LatLong *);  // Check if a new GPS fix is available
 bool getGPSfix();  // Check if GPS has a fix

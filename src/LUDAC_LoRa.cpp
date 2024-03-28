@@ -8,6 +8,13 @@
 
 #include "LUDAC_LoRa.h"
 
+const int MAX_LORA_BUFFER_SIZE = 250;
+char LoRa_received_buffer[250];
+
+// byte msgCount = 0;
+// long lastSendTime = 0;
+// int interval = 2000;
+
 /**
  * @brief Initialize the LoRa module.
  * 
@@ -24,12 +31,6 @@ bool initLoRa() {
   float lat_away;
   float lon_away;
   float dis_away;
-
-  // Define constants for LoRa transceiving
-  // byte msgCount = 0;
-  // byte buffer_size = 50;
-  // long lastSendTime = 0;
-  // int interval = 2000;
 
   // Set up LoRa module
   LoRa.setPins(RADIO_CS_PIN, RADIO_DI0_PIN, RADIO_RST_PIN);
@@ -79,15 +80,14 @@ void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte dest
  * This function receives data over LoRa communication.
  * 
  * @param packetSize The size of the received packet.
- * @param buffer_size The size of the character array.
  * @param localAddress The local address of the receiver.
- * @param incoming A pointer to a character array to store the incoming message.
+ * @return char* A pointer to the received buffer, or nullptr if there was an error.
  */
-void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* incoming) {
+char* receiveLoRaChar(int packetSize, byte localAddress) {
   
   // Check if there is no data received
   if (packetSize == 0)
-    return;
+    return nullptr;
 
   // Read recipient, sender, message ID, and message length from LoRa packet
   int recipient = LoRa.read();
@@ -95,51 +95,29 @@ void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* i
   byte incomingMsgId = LoRa.read();
   byte incomingLength = LoRa.read();
 
-  // Initialize a buffer to store the received message
-  char incomingBuffer[buffer_size] = {};
-
   // Loop to read each character from LoRa and store it in the buffer
-  for (int m = 0; m < buffer_size; ++m) {
-    incomingBuffer[m] += LoRa.read();
+  for (int m = 0; m < MAX_LORA_BUFFER_SIZE; ++m) {
+    LoRa_received_buffer[m] = LoRa.read();
   }
   
   // Check if the received message length matches the expected length
-  if (incomingLength != buffer_size) {
-    Serial.println("error, message length does not match");
-    return;
+  if (incomingLength != MAX_LORA_BUFFER_SIZE) {
+      Serial.println("LoRa: Error, message length does not match");
   }
 
   // Check if the message is intended for this device
   if (recipient != localAddress && recipient != 0xFF) {
-    Serial.println("This message is not for me");
-    return;
+    Serial.println("LoRa: This message is not for me");
+    return nullptr;
   }
 
   // Print information about the received message
-  Serial.println("Received from: 0x" + String(sender, HEX));
-  Serial.println("Sent to 0x" + String(recipient, HEX));
-  Serial.println("Message ID: " + String(incomingMsgId));
-  Serial.println("Message length " + String(incomingLength));
+  Serial.println("LoRa: Received from: 0x" + String(sender, HEX));
+  Serial.println("LoRa: Sent to 0x" + String(recipient, HEX));
+  Serial.println("LoRa: Message ID: " + String(incomingMsgId));
+  Serial.println("LoRa: Message length " + String(incomingLength));
 
-  // Print the received message
-  for(int i = 0; i < buffer_size; ++i) {
-    Serial.print(incomingBuffer[i]);
-  }
-  Serial.println("; RSSI" + String(LoRa.packetRssi()));
-  Serial.println();
-
-  // Copy the received message to the provided buffer
-  for(int j = 0; j < buffer_size; ++j) {
-    incoming[j] = incomingBuffer[j];
-  }
-
-  // Parse the received message
-  receiveLoRaChar_Parse(incoming);
-
-  // Print parsed data
-  Serial.println(lat_away);
-  Serial.println(lon_away);
-  Serial.println(dis_away);
+  return LoRa_received_buffer;
 }
 
 /**
@@ -252,3 +230,30 @@ bool receiveLoRaString(int packetSize, byte localAddress, String &incoming) {
   return true;
 }
 
+/**
+ * @brief Get the received signal strength indicator (RSSI) from LoRa.
+ * 
+ * This function retrieves the RSSI value from the LoRa module. If the RSSI
+ * value is not equal to -157, it returns the RSSI value; otherwise, it 
+ * returns -1 to indicate an invalid RSSI value.
+ * 
+ * @return The RSSI value if it is valid, otherwise -1.
+ */
+int getLoRaRSSI(){
+  int rssi = LoRa.packetRssi();
+  return (rssi != -157 && rssi != -164) ? rssi : -1; // Return -1 if RSSI is -157 or -164
+}
+
+/**
+ * @brief Get the signal-to-noise ratio (SNR) from LoRa.
+ * 
+ * This function retrieves the SNR value from the LoRa module. If the SNR
+ * value is not equal to 0, it returns the SNR value; otherwise, it 
+ * returns -1 to indicate an invalid SNR value.
+ * 
+ * @return The SNR value if it is valid, otherwise -1.
+ */
+float getLoRaSNR(){
+  float snr = LoRa.packetSnr();
+  return (snr != 0) ? snr : -1; // Return SNR value if not equal to 0, else return -1
+}

@@ -69,6 +69,20 @@ bool receivedGPSfix() {
   return true;
 }
 
+String getGPSdata() {
+
+  String GPS_data = "";
+
+  // Parse the raw GPS GGA data by detecting the beginning $
+  if (GPSSerial.available() && GPSSerial.read() == '$') {
+    while (GPSSerial.available()) {
+      char c = GPSSerial.read();
+      GPS_data += c;
+    }
+  }  
+  return GPS_data;
+}
+
 /**
  * @brief Get latitude and longitude from GPS fix.
  * 
