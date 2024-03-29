@@ -4,6 +4,8 @@
 #include "LUDAC_WiFi.h"
 #include "LUDAC_GPS.h"
 #include "driver/uart.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #define UART_LUDAC_BAUD 9600
 #define UART_RX2_RaspPi 16
@@ -13,6 +15,7 @@
 #define UART_RaspPi_ENC SERIAL_8N1
 #define TRANSMIT_MASTER_TO_SLAVE_EN 'T'
 #define TRANSMIT_SLAVE_TO_MASTER_EN 'R'
+#define EnableDualCoreforGPS false
 
 // Define verbose printing macro for debugging
 #define VERBOSE_PRINT(x) \
@@ -20,7 +23,8 @@
     Serial.print(": "); \
     Serial.println(x);
 
-// Function prototype for printGPSInfo
+// Function prototypes
+void taskGPS(void *pvParameters);
 void printGPSInfo();
 void parseGGA(const String& ggaData, LatLong& latLong);
 char* generate_LoRaTx_Buffer(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster);
@@ -111,7 +115,13 @@ void setup() {
 
     // Initialize GPS module
     VERBOSE_PRINT("Initializing GPS ...");
-    initLudacGPS();
+    
+    if (EnableDualCoreforGPS){
+      // Create a task for GPS processing
+      xTaskCreatePinnedToCore(taskGPS, "taskGPS", 4096, NULL, 1, NULL, 1); // Core 1
+    } else {
+      initLudacGPS();
+    }
 
     VERBOSE_PRINT("ok1");
 
@@ -130,13 +140,24 @@ void setup() {
 
 void loop(){
 
-    String printGPSI = getGPSdata();
-    VERBOSE_PRINT(printGPSI);
-
-    // printGPS_fix();
-    // VERBOSE_PRINT(printGPSI2);
-
+    // String printGPSI = getGPSdata();
+    VERBOSE_PRINT("Chilling ...");
     delay(1000);
+}
+
+void taskGPS(void *pvParameters) {
+    (void) pvParameters;
+
+    // Initialize GPS module
+    initLudacGPS();
+
+    for (;;) {
+        // if (receivedGPSfix()) {
+        String gpsData = getGPSdata();
+        VERBOSE_PRINT("GPS Data: " + gpsData);
+        // }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
+    }
 }
 
 void loop1() {

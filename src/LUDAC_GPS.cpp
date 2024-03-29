@@ -24,7 +24,7 @@ const uint8_t timezone = -6;
 /**
  * @brief Initialize GPS module.
  */
-void initGPS() {
+void initLudacGPS() {
   // Begin communication with GPS module
   GPS.begin(9600);
 
@@ -81,6 +81,22 @@ String getGPSdata() {
     }
   }  
   return GPS_data;
+}
+
+// Define the GPS task function
+void gpsTask(void *pvParameters) {
+    // Initialize GPS module
+    initLudacGPS();
+
+    while (true) {
+        // Your GPS library may have functions to read and process data
+        String gpsData = getGPSdata();
+        // Print GPS data
+        Serial.println(gpsData);
+        
+        // Delay for a short duration before the next iteration
+        delay(1000); // Adjust the delay as needed
+    }
 }
 
 /**
