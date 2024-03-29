@@ -22,7 +22,7 @@ char LoRa_received_buffer[250];
  * 
  * @return True if initialization is successful, false otherwise.
  */
-bool initLoRa() {
+bool initLudacLoRa() {
 
   // Initiate the received buffer and the lon, lat, distance containers for the received data
   char lat_rec[15] = {0};
