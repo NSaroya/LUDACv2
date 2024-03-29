@@ -17,13 +17,14 @@
 // int interval = 2000;
 
 // Function prototypes
-bool initLoRa();
+bool initLudacLoRa();
 void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte destinationAddress);
 char* receiveLoRaChar(int packetSize, byte localAddress);
 void receiveLoRaChar_Parse(char received[]);
 void sendLoRaString(String outgoing, byte localAddress, byte destinationAddress);
 bool receiveLoRaString(int packetSize, byte localAddress, String &incoming);
 int getLoRaRSSI();
+float getLoRaSNR();
 
 // Global variables
 // extern char LoRa_sending_buffer[250];
