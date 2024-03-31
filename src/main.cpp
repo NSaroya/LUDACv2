@@ -104,22 +104,24 @@ void setup() {
     }
 
     // Initialize Wi-Fi module or register with a peer device
-    if (initLudacWIFI()) {
-        VERBOSE_PRINT("Starting WiFI in Progress...");
-        WiFi_RegisterPeerManual(broadcastAddress);
-        WiFi_Packet_Handling_init();
-        VERBOSE_PRINT("Starting WiFI succeeded!");
-    } else {
-        VERBOSE_PRINT("Starting WiFI failed!");
-    }
+    // if (initLudacWIFI()) {
+    //     VERBOSE_PRINT("Starting WiFI in Progress...");
+    //     WiFi_RegisterPeerManual(broadcastAddress);
+    //     WiFi_Packet_Handling_init();
+    //     VERBOSE_PRINT("Starting WiFI succeeded!");
+    // } else {
+    //     VERBOSE_PRINT("Starting WiFI failed!");
+    // }
 
     // Initialize GPS module
     VERBOSE_PRINT("Initializing GPS ...");
     
     if (EnableDualCoreforGPS){
       // Create a task for GPS processing
+      VERBOSE_PRINT("Enabling 2nd Core for GPS Task ...");
       xTaskCreatePinnedToCore(taskGPS, "taskGPS", 4096, NULL, 1, NULL, 1); // Core 1
     } else {
+      VERBOSE_PRINT("Enabling GPS Task with the Default Core...");
       initLudacGPS();
     }
 
@@ -140,8 +142,22 @@ void setup() {
 
 void loop1(){
 
-    // String printGPSI = getGPSdata();
+    String printGPSI = getGPSdata();
+    VERBOSE_PRINT(printGPSI);
     VERBOSE_PRINT("Chilling ...");
+
+    // VERBOSE_PRINT("check1");
+    // VERBOSE_PRINT(currentGPSRawData);
+
+    // currentGPSRawData.toCharArray(gpsBuffer_Tx, sizeof(gpsBuffer_Tx));
+    
+    // VERBOSE_PRINT("check2");
+    // VERBOSE_PRINT(currentGPSRawData);
+
+    // // String ggaData = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; // TEST DATA
+    // parseGGA(currentGPSRawData, currentLocation);
+    // printGPSInfo();
+
     delay(1000);
 }
 
@@ -301,7 +317,7 @@ void loop() {
 
       if (wifiEnabled){
           // modify the data type if needed
-          // ggaData = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; // Test Data
+          // currentGPSRawDataBuffer = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; // Test Data
           // char *uartDataReceivedFromMaster = nullptr;
 
           uartDataReceivedFromMaster = example_data_to_send;
@@ -326,6 +342,7 @@ void loop() {
             espnow_WiFi_send_payload(broadcastAddress, currentGPSRawDataBuffer);
             delay(100);
           }
+
 
           unsigned long lastmillis = millis();
           while (!espnow_WiFi_check_finished_receiving()) {
