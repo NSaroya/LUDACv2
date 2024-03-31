@@ -181,13 +181,13 @@ bool WiFi_RegisterPeerManual(uint8_t* broadcastAddress) {
 
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
+  esp_now_register_send_cb(sendWiFiCallback);
 
   // Register peer
   bool WifiConnectStatus = WiFi_connectToPeer_manual(broadcastAddress);
 
   // Register for a callback function that will be called when data is received
-  esp_now_register_recv_cb(OnDataRecv);
+  esp_now_register_recv_cb(recvWiFiCallback);
 
   return WifiConnectStatus;
 }
