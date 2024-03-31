@@ -68,7 +68,7 @@ String currentGPSRawData = "";
 char currentGPSRawDataBuffer[71] = {}; // Buffer to hold GPS data (including null terminator)
 String dataFromDestinationAddress = "";
 
-uint8_t broadcastAddress[] = {0xB8, 0xD6, 0x1A, 0x67, 0xF8, 0x54}; 
+uint8_t broadcastAddress[] = {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}; 
   // {0x40, 0x44, 0xD8, 0x08, 0xF9, 0x94}, // MAC address of transceiver A (HackED sticker)
   // {0x40, 0x22, 0xD8, 0x06, 0x75, 0x2C}, // MAC address of transceiver B (no sticker)
   // {0xB8, 0xD6, 0x1A, 0x67, 0xF8, 0x54}, // MAC address of transceiver C (covered microstrip antenna)
@@ -138,7 +138,7 @@ void setup() {
     }
 }
 
-void loop(){
+void loop1(){
 
     // String printGPSI = getGPSdata();
     VERBOSE_PRINT("Chilling ...");
@@ -160,7 +160,7 @@ void taskGPS(void *pvParameters) {
     }
 }
 
-void loop1() {
+void loop() {
     
     // If receive_LoRa_Buffer is already declared, delete it to avoid memory leaks
     if (receive_LoRa_Buffer != nullptr) {
@@ -259,6 +259,8 @@ void loop1() {
         loraEnabled = false;
     }
 
+    wifiEnabled = true;
+
     if (currentTime - lastTxSendTime > sendTxInterval) {
 
       if (loraEnabled){
@@ -301,7 +303,8 @@ void loop1() {
           // modify the data type if needed
           // ggaData = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; // Test Data
           // char *uartDataReceivedFromMaster = nullptr;
-          // uartDataReceivedFromMaster = modify needed ... 
+
+          uartDataReceivedFromMaster = example_data_to_send;
 
           if (!currentGPSRawData.isEmpty()){
             // Convert String to char buffer
@@ -313,28 +316,44 @@ void loop1() {
 
           if (uartDataReceivedFromMaster != nullptr){
             espnow_WiFi_send_data(broadcastAddress, uartDataReceivedFromMaster);
+            VERBOSE_PRINT("Transmitting data via WiFi: ");
+            Serial.println(uartDataReceivedFromMaster);
+            Serial.println();
           }
 
           while (sending){
             currentGPSRawData.toCharArray(currentGPSRawDataBuffer, 71);
             espnow_WiFi_send_payload(broadcastAddress, currentGPSRawDataBuffer);
+            delay(100);
           }
 
-          while (!espnow_WiFi_check_finished_receiving()){
-            Serial.print("Transmission Receiving: ");
+          unsigned long lastmillis = millis();
+          while (!espnow_WiFi_check_finished_receiving()) {
+            if ((millis() - lastmillis) >= 1000) {
+              VERBOSE_PRINT("Listening via WiFi...");
+              lastmillis = millis();
+            }
           }
 
-          Serial.print("Transmission Received: ");
-          Serial.println(recvBuffer);
-          Serial.println("GPS data: ");
-          Serial.println(incomingPayload.GPS_data);
+          VERBOSE_PRINT("Transmission Received!");
+          VERBOSE_PRINT(recvBuffer);
+          VERBOSE_PRINT("GPS data: ");
+          VERBOSE_PRINT(incomingPayload.GPS_data);
 
-          if (millis() - last_WiFi_RxData_Flush_Time > WiFi_RxData_Flush_Wait){
+          delay(10000);
+
+          if (recvBuffer) {
+            freeRecvBuffer();
+          }
+
+          /*
+          if (millis() - last_WiFi_RxData_Flush_Time > WiFi_RxData_Flush_Wait) {
             int last_WiFi_RxData_Flush_Time = millis();
             freeRecvBuffer();
           }
+          */
           
-          delete[] uartDataReceivedFromMaster;
+          //delete[] uartDataReceivedFromMaster;
           uartDataReceivedFromMaster = nullptr;
       }
       
