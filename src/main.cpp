@@ -104,14 +104,14 @@ void setup() {
     }
 
     // Initialize Wi-Fi module or register with a peer device
-    // if (initLudacWIFI()) {
-    //     VERBOSE_PRINT("Starting WiFI in Progress...");
-    //     WiFi_RegisterPeerManual(broadcastAddress);
-    //     WiFi_Packet_Handling_init();
-    //     VERBOSE_PRINT("Starting WiFI succeeded!");
-    // } else {
-    //     VERBOSE_PRINT("Starting WiFI failed!");
-    // }
+    if (initLudacWIFI()) {
+        VERBOSE_PRINT("Starting WiFI in Progress...");
+        WiFi_RegisterPeerManual(broadcastAddress);
+        WiFi_Packet_Handling_init();
+        VERBOSE_PRINT("Starting WiFI succeeded!");
+    } else {
+        VERBOSE_PRINT("Starting WiFI failed!");
+    }
 
     // Initialize GPS module
     VERBOSE_PRINT("Initializing GPS ...");
@@ -119,13 +119,11 @@ void setup() {
     if (EnableDualCoreforGPS){
       // Create a task for GPS processing
       VERBOSE_PRINT("Enabling 2nd Core for GPS Task ...");
-      xTaskCreatePinnedToCore(taskGPS, "taskGPS", 4096, NULL, 1, NULL, 1); // Core 1
+      xTaskCreatePinnedToCore(taskGPS, "taskGPS", 10000, NULL, 1, NULL, 0); // Core 0
     } else {
       VERBOSE_PRINT("Enabling GPS Task with the Default Core...");
       initLudacGPS();
     }
-
-    VERBOSE_PRINT("ok1");
 
     // If UART communication with Raspberry Pi is enabled
     if (UART_RaspPi_Enable){
@@ -275,8 +273,6 @@ void loop() {
         loraEnabled = false;
     }
 
-    wifiEnabled = true;
-
     if (currentTime - lastTxSendTime > sendTxInterval) {
 
       if (loraEnabled){
@@ -296,12 +292,10 @@ void loop() {
 
         // Ensure transmit_LoRa_Buffer is not larger than 250 bytes
         transmit_LoRa_Buffer[std::min(strlen(transmit_LoRa_Buffer), size_t(250))] = '\0';
-        VERBOSE_PRINT("ok8");
 
         // Now call sendLoRaChar with transmit_LoRa_Buffer
         sendLoRaChar(transmit_LoRa_Buffer, 250, localAddress, destinationAddress);
         VERBOSE_PRINT("Sending data from 0x" + String(destinationAddress, HEX) + " to 0x" + String(localAddress, HEX));
-        VERBOSE_PRINT("ok9");
         
         lastTxSendTime = millis();
 
@@ -309,7 +303,7 @@ void loop() {
         VERBOSE_PRINT("Received data from 0x" + String(destinationAddress, HEX) + " to 0x" + String(localAddress, HEX));
 
         Parse_LoRaRx_Buffer(receive_LoRa_Buffer, gpsBuffer_Rx, LoRa_Data_For_Master);
-        VERBOSE_PRINT("ok11");
+
           // Free the memory allocated for the receive buffer
         delete[] receive_LoRa_Buffer;
         receive_LoRa_Buffer = nullptr;

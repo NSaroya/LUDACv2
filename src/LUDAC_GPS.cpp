@@ -26,14 +26,14 @@ const uint8_t timezone = -6;
  */
 void initLudacGPS() {
   // Begin communication with GPS module
-  GPS.begin(9600);
+  GPSSerial.begin(9600);
 
   // Set NMEA output and update rate
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); //PMTK_SET_NMEA_OUTPUT_GGAONLY
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+  GPSSerial.write(PMTK_SET_NMEA_OUTPUT_RMCGGA); //PMTK_SET_NMEA_OUTPUT_GGAONLY
+  GPSSerial.write(PMTK_SET_NMEA_UPDATE_1HZ);
 
   // Enable antenna
-  GPS.sendCommand(PGCMD_ANTENNA);
+  GPSSerial.write(PGCMD_ANTENNA);
 
   // Wait for GPS to initialize
   delay(INIT_DELAY);
