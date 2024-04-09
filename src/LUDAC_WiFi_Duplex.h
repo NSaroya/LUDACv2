@@ -62,7 +62,7 @@ extern payload2 incomingPayload; // Payload just received
 
 // Example data to send
 extern char placeholder_GPS_data[];
-extern char example_data_to_send[];
+extern char example_data_to_send_wifi[];
 
 // -FUNCTION PROTOTYPES-
 

@@ -19,7 +19,7 @@
 // Function prototypes
 bool initLudacLoRa();
 void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte destinationAddress);
-char* receiveLoRaChar(int packetSize, byte localAddress);
+void receiveLoRaChar(int packetSize, byte localAddress);
 void receiveLoRaChar_Parse(char received[]);
 void sendLoRaString(String outgoing, byte localAddress, byte destinationAddress);
 bool receiveLoRaString(int packetSize, byte localAddress, String &incoming);

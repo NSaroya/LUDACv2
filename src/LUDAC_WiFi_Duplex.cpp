@@ -55,7 +55,7 @@ payload2 incomingPayload; // Payload just received
 
 // Example data to send
 char placeholder_GPS_data[] = "Placeholder GPS data.";
-char example_data_to_send[] = "EXAMPLE DATA TO SEND; EXAMPLE DATA TO SEND;  EXAMPLE DATA TO SEND;  EXAMPLE DATA TO SEND;  EXAMPLE DATA TO SEND;";
+char example_data_to_send_wifi[] = "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation.";
 
 // -FUNCTION PROTOTYPES-
 
@@ -92,6 +92,17 @@ void espnow_WiFi_send_payload(uint8_t* broadcastAddress, char* placeholder_GPS_d
 
     // Gets the next packet from the send buffer and prepares it to send.
     // If sending = false, then it sends an empty packet
+        // finishedSending is set when the final packet is successfully received
+    if (finishedSending)  {
+        send_packet_number = 0;
+        outgoingPacket.packet_number = 0;
+        sendIndex = 0;
+        sending = false;
+        outgoingPayload.final_packet = false;
+        freeSendBuffer();
+        finishedSending = false;
+    }
+    
     if (sending) {
 
         // Send cumulative data size
@@ -127,6 +138,15 @@ void espnow_WiFi_send_payload(uint8_t* broadcastAddress, char* placeholder_GPS_d
 
     // Check for errors
     if (result == ESP_OK) {
+        Serial.print(millis()); Serial.print(": ");
+        Serial.print("Pkt #"); Serial.print(outgoingPacket.packet_number);
+        Serial.print(" sent via WiFi ("); Serial.print(outgoingPacket.packet_size);
+        Serial.print(" bytes, "); Serial.print(sendBufferSize - sendIndex - outgoingPacket.packet_size);
+        Serial.println(" remain):"); Serial.println(outgoingPacket.packet_data);
+        Serial.print(outgoingPayload.first_packet ? "(first packet)" : "");
+        Serial.println(outgoingPayload.final_packet ? "(final packet)" : "");
+
+        /*
         Serial.println("Sent with success");
         Serial.println("PAYLOAD SENT:");
         Serial.print("First packet: "); Serial.println(outgoingPayload.first_packet ? "TRUE" : "FALSE");
@@ -137,21 +157,12 @@ void espnow_WiFi_send_payload(uint8_t* broadcastAddress, char* placeholder_GPS_d
         Serial.print("Total transmission size: "); Serial.println(outgoingPacket.data_size);
         Serial.print("Send index: "); Serial.println(sendIndex);
         Serial.print("sendBufferSize: "); Serial.println(sendBufferSize);
+        */
 
 
     }
     else {
-        Serial.println("Error sending the data");
-    }
-
-    // finishedSending is set when the final packet is successfully received
-    if (finishedSending)  {
-        send_packet_number = 0;
-        sendIndex = 0;
-        sending = false;
-        outgoingPayload.final_packet = false;
-        freeSendBuffer();
-        finishedSending = false;
+        Serial.println("Error sending the data.");
     }
 }
 
@@ -170,6 +181,11 @@ bool espnow_WiFi_check_finished_receiving() {
         finishedReceiving = false;
         return true;
     }
+
+    if (!receiving){
+        return true;
+    }
+    
     return false;
 }
 
@@ -218,13 +234,29 @@ void espnow_WiFi_recv_payload() {
 
 // ESP-NOW send callback function
 void sendWiFiCallback(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  Serial.print(millis());
+  Serial.print(": Payload delivered?\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
+  Serial.println();
   if (status == 0) {
     success = "Delivery Success";
     sendIndex += outgoingPacket.packet_size; // If data was delivered successfully, send the next packet
     send_packet_number++; // If data was delivered successfully, send the next packet
-    if (outgoingPayload.final_packet) finishedSending = true;
+    if (outgoingPayload.final_packet) {
+
+        send_packet_number = 0;
+        outgoingPacket.packet_number = 0;
+        sendIndex = 0;
+        outgoingPayload.final_packet = false;
+
+        Serial.print(millis()); Serial.println(": Finished transmitting:");
+        Serial.println(sendBuffer);
+        Serial.println();
+        finishedSending = true;
+        sending = false;
+        freeSendBuffer();
+
+    }
   }
   else {
     success = "Delivery Fail";
@@ -234,18 +266,25 @@ void sendWiFiCallback(const uint8_t *mac_addr, esp_now_send_status_t status) {
 // ESP-NOW receive callback function
 void recvWiFiCallback(const uint8_t * mac, const uint8_t *incomingData, int len) {
     memcpy(&incomingPayload, incomingData, sizeof(incomingPayload));
-    Serial.print("Bytes received: ");
-    Serial.println(len);
     
-    incomingPacket = incomingPayload.packet;
+    Serial.print(millis()); Serial.print(": ");
 
-    Serial.println("PAYLOAD RECEIVED:");
-    Serial.print("First packet: "); Serial.println(incomingPayload.first_packet ? "TRUE" : "FALSE");
-    Serial.print("Final packet: "); Serial.println(incomingPayload.first_packet ? "TRUE" : "FALSE");
-    Serial.print("Packet data: "); Serial.println(incomingPacket.packet_data);
-    Serial.print("Packet number: "); Serial.println(incomingPacket.packet_number);
-    Serial.print("Packet size: "); Serial.println(incomingPacket.packet_size);
+    if (!(incomingPayload.packet.packet_data == emptyPacket.packet_data)) {
 
+        incomingPacket = incomingPayload.packet;
+        Serial.print("Pkt #"); Serial.print(incomingPacket.packet_number);
+        Serial.print(" receieved via WiFi ("); Serial.print(incomingPacket.packet_size);
+        Serial.print(" bytes, "); Serial.print(recvBufferSize - recvIndex - incomingPacket.packet_size);
+        Serial.println(" remain):"); Serial.println(incomingPacket.packet_data);
+        Serial.print(incomingPayload.first_packet ? "(first packet)" : "");
+        Serial.println(incomingPayload.final_packet ? "(final packet)" : "");
+
+    } else {
+
+        Serial.println("Empty packet received.");       
+    }
+    
+    Serial.println();
 
     // Except case where data is sent in only one packet long.
     if (!(incomingPacket.data_size == incomingPacket.packet_size)) {
@@ -263,7 +302,7 @@ bool espnow_WiFi_send_data(uint8_t* broadcastAddress, char* data_to_send) {
         // Case where message is only one packet
         // Send immediately, don't send piecewise.
         //if (sendBufferSize < PACKET_SIZE) {
-        if (false) {
+        if (sendBufferSize < PACKET_SIZE) {
 
             // Load packet
             outgoingPacket.packet_number = 0;

@@ -9,7 +9,7 @@
 #include "LUDAC_LoRa.h"
 
 const int MAX_LORA_BUFFER_SIZE = 250;
-char LoRa_received_buffer[250];
+char LoRa_received_buffer[250] = {0};
 
 // byte msgCount = 0;
 // long lastSendTime = 0;
@@ -33,7 +33,7 @@ bool initLudacLoRa() {
   float dis_away;
 
   // Set up LoRa module
-  LoRa.setPins(RADIO_CS_PIN, RADIO_DI0_PIN, RADIO_RST_PIN);
+  LoRa.setPins(RADIO_CS_PIN, RADIO_RST_PIN, RADIO_DI0_PIN);
 
   if (!LoRa.begin(LORA_FREQUENCY)) {
     return false;
@@ -64,11 +64,17 @@ void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte dest
   LoRa.write(buffer_size);
 
   // Iterate through the character array to send each character over LoRa
-  for (int n = 0; n < buffer_size; ++n) {
-    LoRa.print(outgoing[n]); // Send character over LoRa
-    Serial.print(outgoing[n]); // Print character to Serial for debugging
+  // for (int n = 0; n < buffer_size; ++n) {
+  //   LoRa.print(outgoing[n]); // Send character over LoRa
+  //   Serial.print(outgoing[n]); // Print character to Serial for debugging
+  // }
+
+  int n = 0;
+  while(n<buffer_size){
+    LoRa.print(outgoing[n]);
+    n++;
   }
-    
+
   // End LoRa packet transmission
   LoRa.endPacket();
 }
@@ -83,41 +89,44 @@ void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte dest
  * @param localAddress The local address of the receiver.
  * @return char* A pointer to the received buffer, or nullptr if there was an error.
  */
-char* receiveLoRaChar(int packetSize, byte localAddress) {
+void receiveLoRaChar(int packetSize, byte localAddress) {
   
   // Check if there is no data received
-  if (packetSize == 0)
-    return nullptr;
+  if (packetSize == 0){
+    // Serial.println("LoRa: No Incoming Message");
+    return;
+  }
 
   // Read recipient, sender, message ID, and message length from LoRa packet
   int recipient = LoRa.read();
   byte sender = LoRa.read();
-  byte incomingMsgId = LoRa.read();
+  // byte incomingMsgId = LoRa.read();
+  // byte incomingLength = LoRa.read();
+
   byte incomingLength = LoRa.read();
 
   // Loop to read each character from LoRa and store it in the buffer
-  for (int m = 0; m < MAX_LORA_BUFFER_SIZE; ++m) {
-    LoRa_received_buffer[m] = LoRa.read();
-  }
+  //int incoming[90] = {0};
   
-  // Check if the received message length matches the expected length
-  if (incomingLength != MAX_LORA_BUFFER_SIZE) {
-      Serial.println("LoRa: Error, message length does not match");
+  for (int m = 0; m < incomingLength; m++) {
+    LoRa_received_buffer[m] = LoRa.read();
   }
 
   // Check if the message is intended for this device
   if (recipient != localAddress && recipient != 0xFF) {
-    Serial.println("LoRa: This message is not for me");
-    return nullptr;
+    // Serial.println("LoRa: This message is not for me");
+    return;
   }
 
   // Print information about the received message
   Serial.println("LoRa: Received from: 0x" + String(sender, HEX));
   Serial.println("LoRa: Sent to 0x" + String(recipient, HEX));
-  Serial.println("LoRa: Message ID: " + String(incomingMsgId));
+  //Serial.println("LoRa: Message ID: " + String(incomingMsgId));
   Serial.println("LoRa: Message length " + String(incomingLength));
 
-  return LoRa_received_buffer;
+  for(int i=0; i < incomingLength; i++){
+    Serial.println(LoRa_received_buffer[i]);
+  }
 }
 
 /**
