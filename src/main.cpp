@@ -78,7 +78,7 @@ byte destinationAddress = 0xAA;
 // Define a global variable to hold the received LoRa data
 char* receive_LoRa_Buffer = nullptr;
 
-int sendLoRaTxInterval = 2000;  // Send LoRa packet bundle every 4 seconds
+int sendLoRaTxInterval = 1000;  // Send LoRa packet bundle every 1 seconds
 uint32_t lastLoRaTxInterval = 0;
 bool firstTimeLoRaListening = true; // Initialize the flag to true initially
 
@@ -100,8 +100,8 @@ char LoRa_Data_For_Master[180] = {};
 String currentGPSRawData = "";
 char currentGPSRawDataBuffer[71] = {}; // Buffer to hold GPS data (including null terminator)
 
-// uint8_t broadcastAddress[] = {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}; // weird WOER antenna
-uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x08, 0xF9, 0x94}; // PATCH ANTENNA
+uint8_t broadcastAddress[] = {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}; // weird WOER antenna
+// uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x08, 0xF9, 0x94}; // PATCH ANTENNA
   // {0x40, 0x22, 0xD8, 0x06, 0x75, 0x2C}, // MAC address of transceiver B (no sticker)
   // {0xB8, 0xD6, 0x1A, 0x67, 0xF8, 0x54}, // MAC address of transceiver C (covered microstrip antenna)
   // {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}  // MAC address of transceiver D (weird WOER antenna, doesn't receive)
@@ -132,15 +132,15 @@ void setup() {
     }
 
     // Initialize Wi-Fi module or register with a peer device
-    // if (initLudacWIFI()) {
-    //     VERBOSE_PRINT("Starting WiFI in Progress...");
-    //     WiFi_RegisterPeerManual(broadcastAddress);        
-    //     WiFi_Packet_Handling_init();
-    //     wifi_init = true;
-    //     VERBOSE_PRINT("Starting WiFI succeeded!");        
-    // } else {
-    //     VERBOSE_PRINT("Starting WiFI failed!");
-    // }
+    if (initLudacWIFI()) {
+        VERBOSE_PRINT("Starting WiFI in Progress...");
+        WiFi_RegisterPeerManual(broadcastAddress);        
+        WiFi_Packet_Handling_init();
+        wifi_init = true;
+        VERBOSE_PRINT("Starting WiFI succeeded!");        
+    } else {
+        VERBOSE_PRINT("Starting WiFI failed!");
+    }
 
     // Initialize GPS module
     VERBOSE_PRINT("Initializing GPS ...");
@@ -302,7 +302,7 @@ void loop() {
 
         // Check if it's time to send LoRa transmission
         lastLoRaTxInterval = millis();
-        sendLoRaTxInterval = random(2000) + 1000;
+        sendLoRaTxInterval = random(5000) + 2000;
 
         // String currentGPSRawData = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; 
         currentGPSRawData = getGPSdata(); // Get current GPS data (commented out for testing purposes)
@@ -350,7 +350,9 @@ void loop() {
         // currentGPSRawDataBuffer = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; // Test Data
         // char *uartDataReceivedFromMaster = nullptr;
 
-        char example_data_to_send_wifi[] = "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation.";
+        char example_data_to_send_wifi[] = "Submarine Status: Depth 450 meters, Speed 18 knots, Battery Level 92%. Nearby Vessel Detected: Type - Cargo Ship, Distance - 800 meters, Bearing - 120 degrees. Weather Conditions: Moderate Sea State, Winds 15 knots from the Northeast, Water Temperature 12°C, Visibility 5 nautical miles.";
+        // char example_data_to_send_wifi[] = "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation.";
+        
         size_t dataSize = strlen(example_data_to_send_wifi);
         uartDataReceivedFromMaster = new char[dataSize + 1]; // Add 1 for null terminator
 
