@@ -375,17 +375,25 @@ void loop() {
           // Serial.println();
         }
 
+        unsigned long lastmillis_send = millis();
         while (sending){
+          if ((millis() - lastmillis_send) >= 30000){
+            finishedSending = true;
+          }
+          lastmillis_send = millis();
           currentGPSRawData.toCharArray(currentGPSRawDataBuffer, 71);
           espnow_WiFi_send_payload(broadcastAddress, currentGPSRawDataBuffer);
           delay(500);
         }
 
-        unsigned long lastmillis = millis();
-        while (!espnow_WiFi_check_finished_receiving()) {
-          if ((millis() - lastmillis) >= 1000) {
+        unsigned long lastmillis_recv = millis();
+        while (!espnow_WiFi_check_finished_receiving()){
+          lastmillis_recv = millis();
+          if ((millis() - lastmillis_recv) >= 30000){
+            finishedReceiving = true;
+          }
+          if ((millis() - lastmillis_recv) >= 1000) {
             VERBOSE_PRINT("Listening via WiFi...");
-            lastmillis = millis();
           }
         }
 
