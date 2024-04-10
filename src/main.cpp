@@ -7,7 +7,12 @@
 //   ECE 490/491 Capstone Design Project
 //
 // AUTHOR
-//   April 2024    Nikhil Saroya
+//   April 2024    Nikhil Saroya 
+//                 main.cpp, LUDAC_GPS.cpp, LUDAC_WiFi.cpp
+//   April 2024    Xinkai Xu
+//                 LUDAC_LoRa.cpp, LUDAC_GPS.cpp
+//   April 2024    Ethan Wilson - 
+//                 LUDAC_WiFi_Duplex.cpp, LUDAC_WiFi.cpp
 //
 // TEAM MEMBERS
 //   Nikhil Saroya, Xinkai Xu, Ethan Wilson, Antony Brittain
