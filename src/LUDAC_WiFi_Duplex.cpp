@@ -55,7 +55,6 @@ payload2 incomingPayload; // Payload just received
 
 // Example data to send
 char placeholder_GPS_data[] = "Placeholder GPS data.";
-char example_data_to_send_wifi[] = "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation.";
 
 // -FUNCTION PROTOTYPES-
 

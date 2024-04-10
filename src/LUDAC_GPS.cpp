@@ -70,18 +70,38 @@ bool receivedGPSfix() {
   return true;
 }
 
-String getGPSdata() {
+String getGPSdataold() {
 
   String GPS_data = "";
 
   // Parse the raw GPS GGA data by detecting the beginning $
-  if (GPSSerial.available() && GPSSerial.read() == '$') {
-    while(GPSSerial.available()){
-    // for (int i = 0; i<70; i++){
+  if (GPSSerial.available() && GPSSerial.peek() == '$') {
+    // while(GPSSerial.available()){
+    for (int i = 0; i<70; i++){
       char c = GPSSerial.read();
       GPS_data += c;
+      delay(5);
     }
   }  
+  return GPS_data;
+}
+
+String getGPSdata() {
+  String GPS_data = "";
+
+  // Check if there's data available and if the next character is the beginning of an NMEA sentence ('$')
+  // if (GPSSerial.available() && GPSSerial.read() == '$') {
+    // Read characters until a newline character is encountered
+  while (GPSSerial.available()) {
+    char c = GPSSerial.read();
+    GPS_data += c;
+    delay(10);
+    if (c == '\n') {
+      break; // Exit the loop if a newline character is encountered
+    }
+  }
+  // }
+
   return GPS_data;
 }
 

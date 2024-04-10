@@ -125,7 +125,7 @@ void receiveLoRaChar(int packetSize, byte localAddress) {
   Serial.println("LoRa: Message length " + String(incomingLength));
 
   for(int i=0; i < incomingLength; i++){
-    Serial.println(LoRa_received_buffer[i]);
+    Serial.print(LoRa_received_buffer[i]);
   }
 }
 

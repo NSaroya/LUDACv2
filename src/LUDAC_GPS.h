@@ -66,6 +66,7 @@ struct Haversine {
 
 // GPS initialization and GPS fix related functions
 void initLudacGPS();  // Initialize GPS module
+String getGPSdataold();
 String getGPSdata();
 bool receivedGPSfix();  // Check if a new GPS fix has been received
 bool hasNewGPSFix(struct LatLong *, struct LatLong *);  // Check if a new GPS fix is available

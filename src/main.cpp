@@ -52,7 +52,8 @@ volatile bool busy = false;
 void GetPeerRSSI(const uint8_t *peerMAC);
 void printGPSInfo();
 void parseGGA(String& ggaData, LatLong& latLong);
-char* generate_LoRaTx_Buffer(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster);
+char* generate_LoRaTx_Buffer_Dynamic(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster);
+char* generate_LoRaTx_Buffer_Static(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster);
 bool Parse_LoRaRx_Buffer(const char* receive_LoRa_Buffer, char* gpsBuffer_Rx, char* LoRa_Data_For_Master);
 String convertUTCToMST(const String& utcTime);
 
@@ -72,7 +73,7 @@ byte destinationAddress = 0xAA;
 // Define a global variable to hold the received LoRa data
 char* receive_LoRa_Buffer = nullptr;
 
-int sendLoRaTxInterval = 2000;  // Send LoRa packet bundle every 2 seconds
+int sendLoRaTxInterval = 2000;  // Send LoRa packet bundle every 4 seconds
 uint32_t lastLoRaTxInterval = 0;
 bool firstTimeLoRaListening = true; // Initialize the flag to true initially
 
@@ -94,8 +95,8 @@ char LoRa_Data_For_Master[180] = {};
 String currentGPSRawData = "";
 char currentGPSRawDataBuffer[71] = {}; // Buffer to hold GPS data (including null terminator)
 
-uint8_t broadcastAddress[] = {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}; // weird WOER antenna
-// uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x08, 0xF9, 0x94}; // PATCH ANTENNA
+// uint8_t broadcastAddress[] = {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}; // weird WOER antenna
+uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x08, 0xF9, 0x94}; // PATCH ANTENNA
   // {0x40, 0x22, 0xD8, 0x06, 0x75, 0x2C}, // MAC address of transceiver B (no sticker)
   // {0xB8, 0xD6, 0x1A, 0x67, 0xF8, 0x54}, // MAC address of transceiver C (covered microstrip antenna)
   // {0xA0, 0xA3, 0xB3, 0x89, 0x23, 0xE4}  // MAC address of transceiver D (weird WOER antenna, doesn't receive)
@@ -126,15 +127,15 @@ void setup() {
     }
 
     // Initialize Wi-Fi module or register with a peer device
-    if (initLudacWIFI()) {
-        VERBOSE_PRINT("Starting WiFI in Progress...");
-        WiFi_RegisterPeerManual(broadcastAddress);        
-        WiFi_Packet_Handling_init();
-        wifi_init = true;
-        VERBOSE_PRINT("Starting WiFI succeeded!");        
-    } else {
-        VERBOSE_PRINT("Starting WiFI failed!");
-    }
+    // if (initLudacWIFI()) {
+    //     VERBOSE_PRINT("Starting WiFI in Progress...");
+    //     WiFi_RegisterPeerManual(broadcastAddress);        
+    //     WiFi_Packet_Handling_init();
+    //     wifi_init = true;
+    //     VERBOSE_PRINT("Starting WiFI succeeded!");        
+    // } else {
+    //     VERBOSE_PRINT("Starting WiFI failed!");
+    // }
 
     // Initialize GPS module
     VERBOSE_PRINT("Initializing GPS ...");
@@ -170,7 +171,7 @@ void loop() {
 
     // If receive_LoRa_Buffer is already declared, delete it to avoid memory leaks
     if (uartDataReceivedFromMaster != nullptr) {
-        // delete[] uartDataReceivedFromMaster;
+        delete[] uartDataReceivedFromMaster;
         uartDataReceivedFromMaster = nullptr;
     }
 
@@ -217,6 +218,7 @@ void loop() {
               memcpy(tempBuffer, uartDataReceivedFromMaster, bytesRead);
               delete[] uartDataReceivedFromMaster;
               uartDataReceivedFromMaster = tempBuffer;
+              delete[] tempBuffer;
           }
       }
 
@@ -263,7 +265,6 @@ void loop() {
           if (success.equals("Delivery Success")) {
               success_count++;
           }
-          // usleep(500000); 
         }
       }
 
@@ -286,6 +287,7 @@ void loop() {
           VERBOSE_PRINT("Neither Wi-Fi or LoRa is Enabled");
       }
       delay(3000);   
+      VERBOSE_PRINT("Starting Communication");
     }
 
     // Check if LoRa is enabled and initialized
@@ -295,11 +297,11 @@ void loop() {
 
         // Check if it's time to send LoRa transmission
         lastLoRaTxInterval = millis();
-        sendLoRaTxInterval = random(3000) + 1000;
+        sendLoRaTxInterval = random(2000) + 1000;
 
         // String currentGPSRawData = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; 
         currentGPSRawData = getGPSdata(); // Get current GPS data (commented out for testing purposes)
-        
+
         // Example data to send via LoRa
         const char example_data_to_send_lora[] = " Submarine Status: Depth 300 meters, Speed 15 knots, Battery Level 85%. Nearby Vessel Detected: Type - Cargo Ship, Distance - 500 meters, Weather Conditions: Moderate Sea State.";
         
@@ -308,7 +310,11 @@ void loop() {
         strcpy(gpsData, currentGPSRawData.c_str());
 
         // Generate LoRa transmission buffer
-        char* transmit_LoRa_Buffer = generate_LoRaTx_Buffer(gpsData, example_data_to_send_lora);
+        char* transmit_LoRa_Buffer = generate_LoRaTx_Buffer_Dynamic(gpsData, example_data_to_send_lora);
+        // VERBOSE_PRINT("Before Sending");
+        // VERBOSE_PRINT(transmit_LoRa_Buffer);
+        // VERBOSE_PRINT(gpsData);
+
         delete[] gpsData;
 
         // Indicate the first time LoRa is transmitting
@@ -317,6 +323,9 @@ void loop() {
 
         // Send LoRa transmission
         sendLoRaChar(transmit_LoRa_Buffer, strlen(transmit_LoRa_Buffer), localAddress, destinationAddress);
+
+        // Free the memory allocated for the LoRa transmission buffer
+        delete[] transmit_LoRa_Buffer;
       } 
 
       // Check if it's the first time LoRa is listening
@@ -329,13 +338,19 @@ void loop() {
       receiveLoRaChar(LoRa.parsePacket(), localAddress);
     }
 
+    delay(200);
+
     if (wifiEnabled && wifi_init){
         // modify the data type if needed
         // currentGPSRawDataBuffer = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"; // Test Data
         // char *uartDataReceivedFromMaster = nullptr;
 
+        char example_data_to_send_wifi[] = "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation.";
+        size_t dataSize = strlen(example_data_to_send_wifi);
+        uartDataReceivedFromMaster = new char[dataSize + 1]; // Add 1 for null terminator
+
         currentGPSRawData = getGPSdata();
-        uartDataReceivedFromMaster = example_data_to_send_wifi;
+        // uartDataReceivedFromMaster = example_data_to_send_wifi;
 
         if (!currentGPSRawData.isEmpty()){
           // Convert String to char buffer
@@ -346,6 +361,7 @@ void loop() {
         }
 
         if (uartDataReceivedFromMaster != nullptr){
+          strcpy(uartDataReceivedFromMaster, example_data_to_send_wifi);
           espnow_WiFi_send_data(broadcastAddress, uartDataReceivedFromMaster);
           VERBOSE_PRINT("Transmitting data via WiFi: ");
           // Serial.println(uartDataReceivedFromMaster);
@@ -378,13 +394,7 @@ void loop() {
         }
         
         // delete[] uartDataReceivedFromMaster;
-        uartDataReceivedFromMaster = NULL;
-    }
-
-    if (wifiEnabled && wifi_init && 0){
-
-
-
+        // uartDataReceivedFromMaster = NULL;
     }
 }
 
@@ -394,7 +404,7 @@ void GetPeerRSSI(const uint8_t *peerMAC) {
 
   bool sending1 = sending;
   sending = false;
-  espnow_WiFi_send_payload(broadcastAddress, "");
+  espnow_WiFi_send_payload(broadcastAddress, const_cast<char*>(""));
   sending = sending1;
   // Send data to peer to trigger RSSI measurement
   // esp_now_send(peerMAC, (uint8_t *) &peerRSSI, sizeof(peerRSSI));
@@ -403,7 +413,49 @@ void GetPeerRSSI(const uint8_t *peerMAC) {
   delay(1000); // Adjust delay as needed based on network conditions
 }
 
-char* generate_LoRaTx_Buffer(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster) {
+char* generate_LoRaTx_Buffer_Dynamic(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster) {
+    // Dynamically allocate memory for the LoRa transmission buffer
+    size_t max_gps_length = (gpsBuffer_Tx != nullptr) ? std::min(strlen(gpsBuffer_Tx), size_t(70)) : 0;
+    size_t max_uart_length = (uartDataReceivedFromMaster != nullptr) ? std::min(strlen(uartDataReceivedFromMaster), size_t(250 - max_gps_length)) : 0;
+
+    // Calculate the total length required for the LoRa transmission buffer
+    size_t total_length = max_gps_length + max_uart_length;
+    if (total_length == 0) {
+        // If both inputs are empty, return nullptr
+        return nullptr;
+    }
+
+    char* transmit_LoRa_Buffer = new char[total_length + 1]; // +1 for null terminator
+
+    // Check if memory allocation was successful
+    if(transmit_LoRa_Buffer == nullptr) {
+        Serial.println("Error: Memory allocation failed");
+        return nullptr;
+    }
+
+    // Copy GPS data to the LoRa transmission buffer if it's not empty
+    if (max_gps_length > 0) {
+        strncpy(transmit_LoRa_Buffer, gpsBuffer_Tx, max_gps_length);
+    }
+
+    // Null-terminate the GPS data
+    transmit_LoRa_Buffer[max_gps_length] = '\0';
+
+    // Calculate the length of GPS data copied
+    size_t gps_data_length = strlen(transmit_LoRa_Buffer);
+
+    // Copy UART data to the LoRa transmission buffer if it's not empty
+    if (max_uart_length > 0) {
+        strncpy(transmit_LoRa_Buffer + gps_data_length, uartDataReceivedFromMaster, max_uart_length);
+    }
+
+    // Null-terminate the LoRa transmission buffer
+    transmit_LoRa_Buffer[gps_data_length + max_uart_length] = '\0';
+
+    return transmit_LoRa_Buffer;
+}
+
+char* generate_LoRaTx_Buffer_Static(const char* gpsBuffer_Tx, const char* uartDataReceivedFromMaster) {
     // Static buffer to hold the result
     static char transmit_LoRa_Buffer[250]; // Adjusted for maximum size
 
