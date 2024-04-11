@@ -9,6 +9,7 @@ This repository contains the main firmware for the Long-distance Underwater Dron
 - **Nikhil Saroya - main.cpp, LUDAC_GPS.cpp, LUDAC_WiFi.cpp** - April 2024
 - **Xinkai Xu - LUDAC_LoRa.cpp, LUDAC_GPS.cpp** - April 2024
 - **Ethan Wilson - LUDAC_WiFi_Duplex.cpp, LUDAC_WiFi.cpp** - April 2024
+- **Antony Brittain - Test and Reliability** - April 2024
 
 ## Team Members
 
