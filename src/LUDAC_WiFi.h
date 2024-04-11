@@ -1,8 +1,10 @@
 #ifndef LUDAC_HEADER_H
 #define LUDAC_HEADER_H
 
-#include <esp_now.h>
 #include <WiFi.h>
+#include <esp_now.h>
+#include "esp_wifi.h"
+#include <LUDAC_WiFi_Duplex.h>
 
 #define LENGTH 50 // char buffer array length
 
@@ -24,6 +26,7 @@ extern int inc_packet_no;
 
 // Success message
 extern String success;
+extern int rssi_display;
 
 // Define a payload struct
 typedef struct payload {
@@ -40,11 +43,16 @@ extern esp_now_peer_info_t peerInfo;
 // Function prototypes
 bool initLudacWIFI();
 bool WiFi_connectToPeer(uint8_t* address);
-void WiFi_RegisterPeer();
+// bool WiFi_RegisterPeer();
+bool WiFi_RegisterPeerManual(uint8_t* broadcastAddress);
+bool WiFi_RegisterPeerAuto();
 void getReadingsFromAddress();
 void getReadingsFromArray();
 void espnow_WiFi_duplex();
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
+int8_t getWiFiRSSI();
+void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type);
+
 
 #endif // LUDAC_HEADER_H

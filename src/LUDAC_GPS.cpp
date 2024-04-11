@@ -24,16 +24,17 @@ const uint8_t timezone = -6;
 /**
  * @brief Initialize GPS module.
  */
-void initGPS() {
+void initLudacGPS() {
   // Begin communication with GPS module
-  GPS.begin(9600);
+  GPSSerial.begin(9600);
+  // GPS.begin(9600);
 
   // Set NMEA output and update rate
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); //PMTK_SET_NMEA_OUTPUT_GGAONLY
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+  GPSSerial.print("PMTK_SET_NMEA_OUTPUT_GGAONLY"); //PMTK_SET_NMEA_OUTPUT_GGAONLY PMTK_SET_NMEA_OUTPUT_RMCGGA
+  GPSSerial.print("PMTK_SET_NMEA_UPDATE_1HZ");
 
   // Enable antenna
-  GPS.sendCommand(PGCMD_ANTENNA);
+  GPSSerial.print("PGCMD_ANTENNA");
 
   // Wait for GPS to initialize
   delay(INIT_DELAY);
@@ -67,6 +68,57 @@ bool receivedGPSfix() {
 
   VERBOSE_PRINT_GPS("GPS has a fix");
   return true;
+}
+
+String getGPSdataold() {
+
+  String GPS_data = "";
+
+  // Parse the raw GPS GGA data by detecting the beginning $
+  if (GPSSerial.available() && GPSSerial.peek() == '$') {
+    // while(GPSSerial.available()){
+    for (int i = 0; i<70; i++){
+      char c = GPSSerial.read();
+      GPS_data += c;
+      delay(5);
+    }
+  }  
+  return GPS_data;
+}
+
+String getGPSdata() {
+  String GPS_data = "";
+
+  // Check if there's data available and if the next character is the beginning of an NMEA sentence ('$')
+  // if (GPSSerial.available() && GPSSerial.read() == '$') {
+    // Read characters until a newline character is encountered
+  while (GPSSerial.available()) {
+    char c = GPSSerial.read();
+    GPS_data += c;
+    delay(10);
+    if (c == '\n') {
+      break; // Exit the loop if a newline character is encountered
+    }
+  }
+  // }
+
+  return GPS_data;
+}
+
+// Define the GPS task function
+void gpsTask(void *pvParameters) {
+    // Initialize GPS module
+    initLudacGPS();
+
+    while (true) {
+        // Your GPS library may have functions to read and process data
+        String gpsData = getGPSdata();
+        // Print GPS data
+        Serial.println(gpsData);
+        
+        // Delay for a short duration before the next iteration
+        delay(1000); // Adjust the delay as needed
+    }
 }
 
 /**

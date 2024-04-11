@@ -20,6 +20,37 @@ uint8_t broadcastAddresses[][6] = {
 
 String s_thisAddress = WiFi.macAddress(); 
 
+char out_message[LENGTH];
+float out_time;
+int out_packet_no;
+
+char inc_message[LENGTH];
+float inc_time;
+int inc_packet_no;
+
+String success;
+
+payload outgoing;
+payload incoming;
+esp_now_peer_info_t peerInfo;
+
+typedef struct {
+  unsigned frame_ctrl: 16;
+  unsigned duration_id: 16;
+  uint8_t addr1[6]; /* receiver address */
+  uint8_t addr2[6]; /* sender address */
+  uint8_t addr3[6]; /* filtering address */
+  unsigned sequence_ctrl: 16;
+  uint8_t addr4[6]; /* optional */
+} wifi_ieee80211_mac_hdr_t;
+
+typedef struct {
+  wifi_ieee80211_mac_hdr_t hdr;
+  uint8_t payload[0]; /* network data ended with 4 bytes csum (CRC32) */
+} wifi_ieee80211_packet_t;
+
+int rssi_display;
+
 /**
  * @brief Initializes WiFi in station mode.
  * 
@@ -27,16 +58,22 @@ String s_thisAddress = WiFi.macAddress();
  * connected to a WiFi network.
  */
 bool initLudacWIFI() {
-  
+
+  // Disconnect from the WiFi network and disable WiFi
+  WiFi.disconnect(true); 
+
   // Set device as a Wi-Fi station
   WiFi.mode(WIFI_STA);
 
-  byte count = 0;
-  while (WiFi.status() != WL_CONNECTED && count < 15) {
-    count++;
-    delay(500);
-    Serial.println("Connecting ...");
-  }
+  // Returns the number of networks found
+  // WiFi.scanNetworks();
+
+  // byte count = 0;
+  // while (WiFi.status() != WL_CONNECTED && count < 15) {
+  //   count++;
+  //   delay(500);
+  //   Serial.println("Connecting ...");
+  // }
 
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Connecting...OK.");
@@ -116,7 +153,7 @@ bool WiFi_connectToPeer_manual(uint8_t* address){
  * This function registers the device as a peer, initializes ESP-NOW,
  * and sets up callbacks for data transmission and reception.
  */
-void WiFi_RegisterPeer() {
+bool WiFi_RegisterPeerAuto() {
   // Initialize packet number to zero
   out_packet_no = 0; 
 
@@ -126,7 +163,7 @@ void WiFi_RegisterPeer() {
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
-    return;
+    return false;
   }
 
   // Once ESPNow is successfully Init, we will register for Send CB to
@@ -134,11 +171,61 @@ void WiFi_RegisterPeer() {
   esp_now_register_send_cb(OnDataSent);
 
   // Register peer
-  WiFi_connectToPeer(broadcastAddresses, 
-                    sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]));
+  bool WifiConnectStatus = WiFi_connectToPeer(broadcastAddresses, 
+                            sizeof(broadcastAddresses) / sizeof(broadcastAddresses[0]));
 
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
+
+  return WifiConnectStatus;
+}
+
+/**
+ * @brief Registers the device as a peer and initializes ESP-NOW.
+ * 
+ * This function registers the device as a peer, initializes ESP-NOW,
+ * and sets up callbacks for data transmission and reception.
+ */
+bool WiFi_RegisterPeerManual(uint8_t* broadcastAddress) {
+  // Initialize packet number to zero
+  out_packet_no = 0; 
+
+  // Print the MAC address of this transceiver
+  Serial.println("This device MAC address: " + s_thisAddress); 
+
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return false;
+  }
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(sendWiFiCallback);
+
+  // Register peer
+  bool WifiConnectStatus = WiFi_connectToPeer_manual(broadcastAddress);
+
+  // Register for a callback function that will be called when data is received
+  esp_now_register_recv_cb(recvWiFiCallback);
+
+  // esp_wifi_set_promiscuous(true);
+  // esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
+
+  return WifiConnectStatus;
+}
+
+void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
+  // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
+  if (type != WIFI_PKT_MGMT)
+    return;
+
+  const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
+  const wifi_ieee80211_packet_t *ipkt = (wifi_ieee80211_packet_t *)ppkt->payload;
+  const wifi_ieee80211_mac_hdr_t *hdr = &ipkt->hdr;
+
+  int rssi = ppkt->rx_ctrl.rssi;
+  rssi_display = rssi;
 }
 
 /**
@@ -220,8 +307,8 @@ void espnow_WiFi_duplex() {
  * @param status Status of the send operation.
  */
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  // Serial.print("\r\nLast Packet Send Status:\t");
+  // Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
   success = (status == ESP_NOW_SEND_SUCCESS) ? "Delivery Success" : "Delivery Fail";
 }
 
@@ -236,9 +323,24 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
  */
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&incoming, incomingData, sizeof(incoming));
-  Serial.print("Bytes received: ");
-  Serial.println(len);
+  // Serial.print("Bytes received: ");
+  // Serial.println(len);
   strcpy(inc_message, incoming.message);
   inc_time = incoming.time;
   inc_packet_no = incoming.packet_no;
 }
+
+/**
+ * @brief Get the received signal strength indicator (RSSI) from WiFi.
+ * 
+ * This function retrieves the RSSI value from the WiFi module. If the RSSI
+ * value is not equal to 0, it returns the RSSI value; otherwise, it 
+ * returns -1 to indicate an invalid RSSI value.
+ * 
+ * @return The RSSI value if it is valid, otherwise -1.
+ */
+int8_t getWiFiRSSI() {
+  int8_t RSSI = WiFi.RSSI();
+  return (RSSI != 0) ? RSSI : -1; // Return RSSI value if not equal to 0, else return -1
+}
+

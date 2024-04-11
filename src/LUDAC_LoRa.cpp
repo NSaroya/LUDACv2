@@ -8,6 +8,13 @@
 
 #include "LUDAC_LoRa.h"
 
+const int MAX_LORA_BUFFER_SIZE = 250;
+char LoRa_received_buffer[250] = {0};
+
+// byte msgCount = 0;
+// long lastSendTime = 0;
+// int interval = 2000;
+
 /**
  * @brief Initialize the LoRa module.
  * 
@@ -15,7 +22,7 @@
  * 
  * @return True if initialization is successful, false otherwise.
  */
-bool initLoRa() {
+bool initLudacLoRa() {
 
   // Initiate the received buffer and the lon, lat, distance containers for the received data
   char lat_rec[15] = {0};
@@ -25,14 +32,8 @@ bool initLoRa() {
   float lon_away;
   float dis_away;
 
-  // Define constants for LoRa transceiving
-  // byte msgCount = 0;
-  // byte buffer_size = 50;
-  // long lastSendTime = 0;
-  // int interval = 2000;
-
   // Set up LoRa module
-  LoRa.setPins(RADIO_CS_PIN, RADIO_DI0_PIN, RADIO_RST_PIN);
+  LoRa.setPins(RADIO_CS_PIN, RADIO_RST_PIN, RADIO_DI0_PIN);
 
   if (!LoRa.begin(LORA_FREQUENCY)) {
     return false;
@@ -63,11 +64,17 @@ void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte dest
   LoRa.write(buffer_size);
 
   // Iterate through the character array to send each character over LoRa
-  for (int n = 0; n < buffer_size; ++n) {
-    LoRa.print(outgoing[n]); // Send character over LoRa
-    Serial.print(outgoing[n]); // Print character to Serial for debugging
+  // for (int n = 0; n < buffer_size; ++n) {
+  //   LoRa.print(outgoing[n]); // Send character over LoRa
+  //   Serial.print(outgoing[n]); // Print character to Serial for debugging
+  // }
+
+  int n = 0;
+  while(n<buffer_size){
+    LoRa.print(outgoing[n]);
+    n++;
   }
-    
+
   // End LoRa packet transmission
   LoRa.endPacket();
 }
@@ -79,67 +86,47 @@ void sendLoRaChar(char outgoing[], int buffer_size, byte localAddress, byte dest
  * This function receives data over LoRa communication.
  * 
  * @param packetSize The size of the received packet.
- * @param buffer_size The size of the character array.
  * @param localAddress The local address of the receiver.
- * @param incoming A pointer to a character array to store the incoming message.
+ * @return char* A pointer to the received buffer, or nullptr if there was an error.
  */
-void receiveLoRaChar(int packetSize, int buffer_size, byte localAddress, char* incoming) {
+void receiveLoRaChar(int packetSize, byte localAddress) {
   
   // Check if there is no data received
-  if (packetSize == 0)
+  if (packetSize == 0){
+    // Serial.println("LoRa: No Incoming Message");
     return;
+  }
 
   // Read recipient, sender, message ID, and message length from LoRa packet
   int recipient = LoRa.read();
   byte sender = LoRa.read();
-  byte incomingMsgId = LoRa.read();
+  // byte incomingMsgId = LoRa.read();
+  // byte incomingLength = LoRa.read();
+
   byte incomingLength = LoRa.read();
 
-  // Initialize a buffer to store the received message
-  char incomingBuffer[buffer_size] = {};
-
   // Loop to read each character from LoRa and store it in the buffer
-  for (int m = 0; m < buffer_size; ++m) {
-    incomingBuffer[m] += LoRa.read();
-  }
+  //int incoming[90] = {0};
   
-  // Check if the received message length matches the expected length
-  if (incomingLength != buffer_size) {
-    Serial.println("error, message length does not match");
-    return;
+  for (int m = 0; m < incomingLength; m++) {
+    LoRa_received_buffer[m] = LoRa.read();
   }
 
   // Check if the message is intended for this device
   if (recipient != localAddress && recipient != 0xFF) {
-    Serial.println("This message is not for me");
+    // Serial.println("LoRa: This message is not for me");
     return;
   }
 
   // Print information about the received message
-  Serial.println("Received from: 0x" + String(sender, HEX));
-  Serial.println("Sent to 0x" + String(recipient, HEX));
-  Serial.println("Message ID: " + String(incomingMsgId));
-  Serial.println("Message length " + String(incomingLength));
+  Serial.println("LoRa: Received from: 0x" + String(sender, HEX));
+  Serial.println("LoRa: Sent to 0x" + String(recipient, HEX));
+  //Serial.println("LoRa: Message ID: " + String(incomingMsgId));
+  Serial.println("LoRa: Message length " + String(incomingLength));
 
-  // Print the received message
-  for(int i = 0; i < buffer_size; ++i) {
-    Serial.print(incomingBuffer[i]);
+  for(int i=0; i < incomingLength; i++){
+    Serial.print(LoRa_received_buffer[i]);
   }
-  Serial.println("; RSSI" + String(LoRa.packetRssi()));
-  Serial.println();
-
-  // Copy the received message to the provided buffer
-  for(int j = 0; j < buffer_size; ++j) {
-    incoming[j] = incomingBuffer[j];
-  }
-
-  // Parse the received message
-  receiveLoRaChar_Parse(incoming);
-
-  // Print parsed data
-  Serial.println(lat_away);
-  Serial.println(lon_away);
-  Serial.println(dis_away);
 }
 
 /**
@@ -252,3 +239,30 @@ bool receiveLoRaString(int packetSize, byte localAddress, String &incoming) {
   return true;
 }
 
+/**
+ * @brief Get the received signal strength indicator (RSSI) from LoRa.
+ * 
+ * This function retrieves the RSSI value from the LoRa module. If the RSSI
+ * value is not equal to -157, it returns the RSSI value; otherwise, it 
+ * returns -1 to indicate an invalid RSSI value.
+ * 
+ * @return The RSSI value if it is valid, otherwise -1.
+ */
+int getLoRaRSSI(){
+  int rssi = LoRa.packetRssi();
+  return (rssi != -157 && rssi != -164) ? rssi : -1; // Return -1 if RSSI is -157 or -164
+}
+
+/**
+ * @brief Get the signal-to-noise ratio (SNR) from LoRa.
+ * 
+ * This function retrieves the SNR value from the LoRa module. If the SNR
+ * value is not equal to 0, it returns the SNR value; otherwise, it 
+ * returns -1 to indicate an invalid SNR value.
+ * 
+ * @return The SNR value if it is valid, otherwise -1.
+ */
+float getLoRaSNR(){
+  float snr = LoRa.packetSnr();
+  return (snr != 0) ? snr : -1; // Return SNR value if not equal to 0, else return -1
+}
