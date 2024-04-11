@@ -11,8 +11,10 @@
 //                 main.cpp, LUDAC_GPS.cpp, LUDAC_WiFi.cpp
 //   April 2024    Xinkai Xu
 //                 LUDAC_LoRa.cpp, LUDAC_GPS.cpp
-//   April 2024    Ethan Wilson - 
+//   April 2024    Ethan Wilson 
 //                 LUDAC_WiFi_Duplex.cpp, LUDAC_WiFi.cpp
+//   April 2024    Antony Brittain 
+//                 Testing and Reliability
 //
 // TEAM MEMBERS
 //   Nikhil Saroya, Xinkai Xu, Ethan Wilson, Antony Brittain
@@ -31,9 +33,6 @@
 #include "LUDAC_LoRa.h"
 #include "LUDAC_WiFi.h"
 #include "LUDAC_GPS.h"
-#include "driver/uart.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 
 #define UART_LUDAC_BAUD 9600
 #define UART_RX2_RaspPi 16

@@ -1,0 +1,24 @@
+import RPi.GPIO as GPIO
+import time
+
+READY_PIN = 18  # Example GPIO pin on Raspberry Pi for receiving readiness signal
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(READY_PIN, GPIO.IN)
+
+def wait_for_ready(timeout):
+    start_time = time.time()
+    while not GPIO.input(READY_PIN):
+        if time.time() - start_time > timeout:
+            print("Timeout waiting for ESP32 to become ready")
+            return False
+        time.sleep(0.1)
+    return True
+
+while True:
+    if wait_for_ready(timeout=20):  # Wait for up to 20 seconds for ESP32 to become ready
+        print("ESP32 is ready, sending request...")
+        # Send request to ESP32
+    else:
+        print("ESP32 is busy, waiting...")
+        # Handle the case when ESP32 is busy
