@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the main firmware for the Long-distance Underwater Drone to Aerial Communication (LUDAC) project developed as part of the ECE 490/491 Capstone Design Project. This firmware facilitates communication between underwater drones and aerial devices.
+This repository contains the main firmware for the Long-distance Underwater Drone to Aerial Communication (LUDAC) project developed as part of the ECE 490/491 Capstone Design Project. This firmware facilitates communication between surfaced underwater submarines and aerial drones.
 
 ## Author
 
