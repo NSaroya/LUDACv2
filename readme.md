@@ -1,15 +1,4 @@
-# LUDAC Firmware
-
-## Overview
-
-This repository contains the main firmware for the Long-distance Underwater Drone to Aerial Communication (LUDAC) project developed as part of the ECE 490/491 Capstone Design Project. This firmware facilitates communication between surfaced underwater submarines and aerial drones.
-
-## Author
-
-- **Nikhil Saroya - main.cpp, LUDAC_GPS.cpp, LUDAC_WiFi.cpp** - April 2024
-- **Xinkai Xu - LUDAC_LoRa.cpp, LUDAC_GPS.cpp** - April 2024
-- **Ethan Wilson - LUDAC_WiFi_Duplex.cpp, LUDAC_WiFi.cpp** - April 2024
-- **Antony Brittain - Test and Reliability** - April 2024
+# Long Distance Underwater and Aerial Drone Communication (LUDAC)
 
 ## Team Members
 
@@ -17,6 +6,17 @@ This repository contains the main firmware for the Long-distance Underwater Dron
 - Xinkai Xu
 - Ethan Wilson
 - Antony Brittain
+
+## Overview
+
+The Long Distance Underwater Drone to Aerial Communication project (LUDAC) integrates LoRa and WiFi for long range and near range communication between a submersible and an aerial drone. It realizes long distance communication with a max transmission distance of 1.3km using the LoRa protocol. Near-range communication is realized with the ESPNOW WiFi protocol, which has the ability to transmit large file sizes. The board is configured to switch between WiFi and LoRa based on signal quality to conserve power. LUDAC boards have been benchmarked for performance criteria including power consumption, packet integrity, bitrate, transmission distance, packet delay, LoRa/WiFi switching delay, etc. Overall, LUDAC boards have exceeded or met most of the specification requirements. The proposed functionalities, along with the extended goals of large file transmission and power supply configurability have been achieved by the design.
+
+## Contributors
+
+- **Nikhil Saroya - main.cpp, LUDAC_GPS.cpp, LUDAC_WiFi.cpp** - April 2024
+- **Xinkai Xu - LUDAC_LoRa.cpp, LUDAC_GPS.cpp** - April 2024
+- **Ethan Wilson - LUDAC_WiFi_Duplex.cpp, LUDAC_WiFi.cpp** - April 2024
+- **Antony Brittain - Test and Reliability** - April 2024
 
 ## Description
 
